@@ -1,11 +1,17 @@
 import Image from "next/image";
 import { Header } from './components/Header';
+import { HeaderTab } from './components/HeaderTab';
+import { Sidebar } from './components/Sidebar';
 
 export default function Home() {
   return (
-    <div className="h-screen flex flex-col">
-      <Header />
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+    <div className="flex flex-col">
+      <Sidebar />
+      <div className="flex flex-col relative z-10">
+        <Header />
+        <HeaderTab />
+      </div>
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 pl-[var(--sidebar-width,16rem)] bg-grey dark:bg-black sm:items-start">
         <Image
           className="dark:invert"
           src="/next.svg"
