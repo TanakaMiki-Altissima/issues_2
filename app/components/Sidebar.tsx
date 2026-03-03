@@ -98,7 +98,7 @@ export function Sidebar() {
       <FontAwesomeIcon icon={icon} />
       {isOpen && (
         <>
-          <span className="min-w-0 flex-1 truncate text-sm">{label}</span>
+          <span className="min-w-0 flex-1 truncate text-left text-sm">{label}</span>
           <span className="pr-2">
             <FontAwesomeIcon icon={expanded ? faChevronDown : faChevronUp} className="text-xs" />
           </span>
