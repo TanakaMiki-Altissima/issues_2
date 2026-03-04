@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCog,faHome } from '@fortawesome/free-solid-svg-icons';
+import { faCog,faHome,faChevronLeft,faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -30,15 +30,15 @@ export function Calendar() {
   };
 
   return (
-    <div className="flex flex-col p-3 bg-white rounded-lg w-[300px] m-5">
+    <div className="flex flex-col p-3 bg-white rounded-lg m-6 max-h-[350px]">
        <div className="flex w-full items-center gap-2">
         <FontAwesomeIcon icon={faCog} className="text-gray-700 bg-gray-200 rounded p-1 px-2" />
-        <p className="text-sm text-gray-700 p-1 px-2">{year}年{month + 1}月</p>
+        <p className="text-sm font-semibold text-gray-700 p-1 px-2 mx-6">{year}年{month + 1}月</p>
         <div className="min-w-0 flex-1" />
         <div className="flex gap-1">
-          <p className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2">＜</p>
-          <FontAwesomeIcon icon={faHome} className="text-gray-700 bg-gray-200 rounded p-1" />
-          <p className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2">＞</p>
+          <FontAwesomeIcon icon={faChevronLeft} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2" />
+          <FontAwesomeIcon icon={faHome} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2" />
+          <FontAwesomeIcon icon={faChevronRight} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2" />
         </div>
       </div>
 
@@ -59,7 +59,7 @@ export function Calendar() {
         {cells.map((date, i) => (
           <div
             key={i}
-            className={`pb-8 flex items-center justify-center min-h-[24px] ${getCellStyle(date, i % 7)}`}
+            className={`pb-9 flex items-center justify-center ${getCellStyle(date, i % 7)}`}
           >
             {date ?? ''}
           </div>

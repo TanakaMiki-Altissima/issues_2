@@ -74,7 +74,7 @@ export function Sidebar() {
     <button
       key={label}
       type="button"
-      className={`flex h-[40px] w-full items-center text-gray-400 hover:bg-gray-700 hover:text-sky-300 ${isOpen ? `justify-start gap-2 pl-2 ${isChild ? 'pl-6' : ''}` : 'justify-center'}`}
+      className={`flex h-[40px] w-full items-center text-gray-400 hover:bg-gray-700 hover:text-sky-300 ${isOpen ? `justify-start gap-2 pl-2` : 'justify-center'}`}
       style={{ height: `${BUTTON_HEIGHT}px` }}
     >
       <FontAwesomeIcon icon={icon} />
@@ -121,7 +121,7 @@ export function Sidebar() {
           {isOpen ? '＜' : '＞'}
         </span>
       </button>
-      <div className="min-h-0 flex-1 overflow-y-auto bg-gray-800">
+      <div className="min-h-0 bg-gray-800">
         {rowBtn(ICONS[0], LABELS[0])}
         {rowBtn(ICONS[1], LABELS[1])}
         {groupBtn(ICONS[2], LABELS[2], awsOpen, () => setAwsOpen((p) => !p))}

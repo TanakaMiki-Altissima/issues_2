@@ -8,16 +8,16 @@ export function HeaderTab() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <>
+    <div className="relative">
       {isMenuOpen && (
-        <div className="bg-gray-300 py-1 pl-6">
+        <div className="absolute left-0 right-0 top-full z-10 shadow-[0_4px_12px_rgba(0,0,0,0.2)] bg-gray-300 py-1 pl-6">
           <div className="flex gap-8 pb-3">
             
   <div className="flex flex-col items-center w-7 h-7">
     <img
       src="/f_f_traffic_30_s512_f_traffic_30_0nbg.png"
       alt="portal"
-      className="w-7 h-7 shrink-0object-contain p-1 bg-blue-300 rounded shadow-[-2px_0_2px_rgba(0,0,0,0.2),0_2px_2px_rgba(0,0,0,0.2)]"
+      className="w-7 h-7 object-contain p-1 bg-blue-300 rounded shadow-[-2px_0_2px_rgba(0,0,0,0.2),0_2px_2px_rgba(0,0,0,0.2)]"
     />
     <p className="text-[9px] text-blue-700 font-semibold whitespace-nowrap">ポータル</p>
   </div>
@@ -98,6 +98,6 @@ export function HeaderTab() {
           <FontAwesomeIcon icon={isMenuOpen ? faChevronUp : faChevronDown} className="text-[10px]" />
         </button>
       </div>
-    </>
+    </div>
   );
 }
