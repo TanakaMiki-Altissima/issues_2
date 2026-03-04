@@ -10,7 +10,7 @@ export function HeaderTab() {
   return (
     <div className="relative">
       {isMenuOpen && (
-        <div className="absolute left-0 right-0 top-full z-10 shadow-[0_4px_12px_rgba(0,0,0,0.2)] bg-gray-300 py-1 pl-6">
+        <div className="shadow-[0_4px_12px_rgba(0,0,0,0.2)] bg-gray-300 py-1 pl-6">
           <div className="flex gap-8 pb-3">
             
   <div className="flex flex-col items-center w-7 h-7">

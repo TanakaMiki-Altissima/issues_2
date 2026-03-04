@@ -1,15 +1,22 @@
+'use client';
+
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCog,faHome,faChevronLeft,faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faCog, faHome, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
 
 export function Calendar() {
-    const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const today = now.getDate();
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const todayDate = now.getDate();
+
+  const [viewYear, setViewYear] = useState(currentYear);
+  const [viewMonth, setViewMonth] = useState(currentMonth);
+
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
   const cells: (number | null)[] = [
     ...Array(firstDayOfWeek).fill(null),
@@ -18,10 +25,37 @@ export function Calendar() {
   const totalCells = 42;
   while (cells.length < totalCells) cells.push(null);
 
+  const goPrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
+  };
+
+  const goNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
+  };
+
+  const goCurrentMonth = () => {
+    setViewYear(currentYear);
+    setViewMonth(currentMonth);
+  };
+
   const getCellStyle = (date: number | null, colIndex: number) => {
     if (date === null) return 'text-[9px]';
-    const isPast = date < today;
-    const isToday = date === today;
+    const isViewingCurrentMonth = viewYear === currentYear && viewMonth === currentMonth;
+    const isToday = isViewingCurrentMonth && date === todayDate;
+    const isPast =
+      viewYear < currentYear ||
+      (viewYear === currentYear && viewMonth < currentMonth) ||
+      (isViewingCurrentMonth && date < todayDate);
     const isWeekend = colIndex === 0 || colIndex === 6;
 
     if (isToday) return 'text-[9px] bg-blue-200 rounded text-center';
@@ -33,12 +67,18 @@ export function Calendar() {
     <div className="flex flex-col p-3 bg-white rounded-lg m-6 max-h-[350px]">
        <div className="flex w-full items-center gap-2">
         <FontAwesomeIcon icon={faCog} className="text-gray-700 bg-gray-200 rounded p-1 px-2" />
-        <p className="text-sm font-semibold text-gray-700 p-1 px-2 mx-6">{year}年{month + 1}月</p>
+        <p className="text-sm font-semibold text-gray-700 p-1 px-2 mx-6">{viewYear}年{viewMonth + 1}月</p>
         <div className="min-w-0 flex-1" />
         <div className="flex gap-1">
-          <FontAwesomeIcon icon={faChevronLeft} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2" />
-          <FontAwesomeIcon icon={faHome} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2" />
-          <FontAwesomeIcon icon={faChevronRight} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2" />
+          <button type="button" onClick={goPrevMonth} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300" aria-label="前の月">
+            <FontAwesomeIcon icon={faChevronLeft} />
+          </button>
+          <button type="button" onClick={goCurrentMonth} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300" aria-label="今月">
+            <FontAwesomeIcon icon={faHome} />
+          </button>
+          <button type="button" onClick={goNextMonth} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300" aria-label="次の月">
+            <FontAwesomeIcon icon={faChevronRight} />
+          </button>
         </div>
       </div>
 
