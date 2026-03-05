@@ -18,11 +18,13 @@ export function Calendar() {
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
+  const neededRows = Math.ceil((firstDayOfWeek + daysInMonth) / 7);
+  const totalCells = neededRows * 7;
+
   const cells: (number | null)[] = [
     ...Array(firstDayOfWeek).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  const totalCells = 42;
   while (cells.length < totalCells) cells.push(null);
 
   const goPrevMonth = () => {
@@ -64,19 +66,33 @@ export function Calendar() {
   };
 
   return (
-    <div className="flex flex-col p-3 bg-white rounded-lg m-6 max-h-[350px]">
-       <div className="flex w-full items-center gap-2">
+    <div className="flex flex-col p-3 bg-white rounded-lg m-6 self-start">
+      <div className="flex w-full items-center gap-2">
         <FontAwesomeIcon icon={faCog} className="text-gray-700 bg-gray-200 rounded p-1 px-2" />
-        <p className="text-sm font-semibold text-gray-700 p-1 px-2 mx-6">{viewYear}年{viewMonth + 1}月</p>
+        <p className="text-sm font-semibold text-gray-700 p-1 px-2 mx-6">
+          {viewYear}年{viewMonth + 1}月
+        </p>
         <div className="min-w-0 flex-1" />
         <div className="flex gap-1">
-          <button type="button" onClick={goPrevMonth} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300" aria-label="前の月">
+          <button
+            type="button"
+            onClick={goPrevMonth}
+            className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300"
+          >
             <FontAwesomeIcon icon={faChevronLeft} />
           </button>
-          <button type="button" onClick={goCurrentMonth} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300" aria-label="今月">
+          <button
+            type="button"
+            onClick={goCurrentMonth}
+            className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300"
+          >
             <FontAwesomeIcon icon={faHome} />
           </button>
-          <button type="button" onClick={goNextMonth} className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300" aria-label="次の月">
+          <button
+            type="button"
+            onClick={goNextMonth}
+            className="text-sm text-gray-700 bg-gray-200 rounded p-1 px-2 hover:bg-gray-300"
+          >
             <FontAwesomeIcon icon={faChevronRight} />
           </button>
         </div>
