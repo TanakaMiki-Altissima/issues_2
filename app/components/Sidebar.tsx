@@ -144,7 +144,7 @@ export function Sidebar() {
         {videoOpen && rowBtn(ICONS[10], LABELS[10], 10, true)}
       </div>
       <div className={`flex min-h-0 flex-1 flex-col ${bottomBg}`}>
-        {[11, 12, 13].map((i) => (
+        {[11, 12, 13].map((i) =>
           i === 11 ? (
             <Link
               key={i}
@@ -156,17 +156,17 @@ export function Sidebar() {
               {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
             </Link>
           ) : (
-          <button
-            key={i}
-            type="button"
-            className={`flex h-[40px] w-full shrink-0 items-center text-gray-400 hover:text-sky-300 ${getActiveClass(i)} ${bottomBg} ${bottomBtnHover} ${isOpen ? 'justify-start gap-2 pl-2' : 'justify-center'}`}
-            style={{ height: `${BUTTON_HEIGHT}px` }}
-          >
-            <FontAwesomeIcon icon={ICONS[i]} />
-            {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
-          </button>
-          )
-        ))}
+            <button
+              key={i}
+              type="button"
+              className={`flex h-[40px] w-full shrink-0 items-center text-gray-400 hover:text-sky-300 ${getActiveClass(i)} ${bottomBg} ${bottomBtnHover} ${isOpen ? 'justify-start gap-2 pl-2' : 'justify-center'}`}
+              style={{ height: `${BUTTON_HEIGHT}px` }}
+            >
+              <FontAwesomeIcon icon={ICONS[i]} />
+              {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
+            </button>
+          ),
+        )}
         <div className={`min-h-0 flex-1 ${bottomBg}`} />
       </div>
     </aside>
