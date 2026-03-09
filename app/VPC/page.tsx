@@ -1,10 +1,16 @@
+'use client';
+
+import { useState } from 'react';
 import { Header } from '../components/Header';
 import { HeaderTab } from '../components/HeaderTab';
 import { Sidebar } from '../components/Sidebar';
+import { VpcCreateModal } from '../components/VpcCreateModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRotateRight } from '@fortawesome/free-solid-svg-icons';
 
 export default function Home() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen flex-row">
       <Sidebar />
@@ -37,10 +43,19 @@ export default function Home() {
                 icon={faArrowRotateRight}
                 className="text-gray-700 bg-gray-200 border border-gray-400 rounded p-3"
               />
-              <button type="button" className="bg-blue-500 text-white px-3 rounded-md">
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-3 rounded-md"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
                 新規作成
               </button>
             </div>
+            <VpcCreateModal
+              isOpen={isCreateModalOpen}
+              onClose={() => setIsCreateModalOpen(false)}
+              onSuccess={() => setIsCreateModalOpen(false)}
+            />
             <div className="flex justify-between p-3 w-full bg-white rounded-md border border-gray-400 mt-6">
               <p>スタック名</p>
               <p>ステータス</p>
