@@ -9,6 +9,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRotateRight } from '@fortawesome/free-solid-svg-icons';
 import { VpcItem, fetchVpcList } from '../../lib/mockapi';
 
+function formatDateTime(isoString: string): string {
+  if (!isoString) return '';
+  return new Date(isoString).toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+}
+
 export default function Home() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [vpcList, setVpcList] = useState<VpcItem[]>([]);
@@ -81,7 +95,7 @@ export default function Home() {
               }}
             />
             <div className="w-full bg-white rounded-md border border-gray-400 mt-6 overflow-hidden">
-              <div className="flex justify-between p-3 border-b border-gray-200 bg-gray-50">
+              <div className="flex justify-between p-3 border-b border-gray-200">
                 <p className="flex-1">スタック名</p>
                 <p className="flex-1">ステータス</p>
                 <p className="flex-1">説明</p>
@@ -107,8 +121,8 @@ export default function Home() {
                   <p className="flex-1 truncate">{item.stackName}</p>
                   <p className="flex-1 truncate">{item.status}</p>
                   <p className="flex-1 truncate">{item.description}</p>
-                  <p className="flex-1 truncate">{item.createdAt ?? ''}</p>
-                  <p className="flex-1 truncate">{item.updatedAt ?? ''}</p>
+                  <p className="flex-1 truncate">{formatDateTime(item.createdAt ?? '')}</p>
+                  <p className="flex-1 truncate">{item.updatedAt ? formatDateTime(item.updatedAt) : ''}</p>
                   <p className="flex-1 truncate"></p>
                 </div>
               ))}

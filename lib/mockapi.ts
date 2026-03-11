@@ -33,6 +33,7 @@ export async function createVpc(input: VpcCreateInput): Promise<VpcItem> {
       stackName: input.stackName,
       status: input.status,
       description: input.description ?? '',
+      createdAt: getJSTDateString(),
     }),
   });
   if (!res.ok) {
@@ -51,3 +52,9 @@ export async function fetchVpcList(): Promise<VpcItem[]> {
   }
   return res.json();
 }
+
+export const getJSTDateString = (): string => {
+  return new Date().toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+  });
+};
