@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '../components/Header';
 import { HeaderTab } from '../components/HeaderTab';
 import { Sidebar } from '../components/Sidebar';
 import { VpcCreateModal } from '../components/VpcCreateModal';
+import { VpcEditModal } from '../components/VpcEditModal';
+import { VpcDeleteModal } from '../components/VpcDeleteModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRotateRight } from '@fortawesome/free-solid-svg-icons';
-import { VpcItem, fetchVpcList } from '../../lib/mockapi';
+import { VpcItem, fetchVpcList, deleteVpc } from '../../lib/mockapi';
 
 function formatDateTime(isoString: string): string {
   if (!isoString) return '';
@@ -28,6 +30,18 @@ export default function Home() {
   const [vpcList, setVpcList] = useState<VpcItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<VpcItem | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteTargetItem, setDeleteTargetItem] = useState<VpcItem | null>(null);
+
+  const selectedRowRef = useRef<HTMLDivElement | null>(null);
+  const [actionMenuRect, setActionMenuRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
   const FILTER_STATUS_OPTIONS = [
     { value: '', label: '選択してください' },
@@ -70,6 +84,33 @@ export default function Home() {
     loadList();
   }, []);
 
+  useEffect(() => {
+    if (!selectedRowId) {
+      setActionMenuRect(null);
+      return;
+    }
+    const el = selectedRowRef.current;
+    if (!el) {
+      setActionMenuRect(null);
+      return;
+    }
+    const updateRect = () => {
+      const rect = el.getBoundingClientRect();
+      setActionMenuRect({ top: rect.top, left: rect.left, width: rect.width });
+    };
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [selectedRowId]);
+
+  const selectedItem = selectedRowId
+    ? (displayedList.find((i) => i.id === selectedRowId) ?? null)
+    : null;
+
   return (
     <div className="flex min-h-screen flex-row">
       <Sidebar />
@@ -77,7 +118,7 @@ export default function Home() {
         <Header />
         <HeaderTab />
         <main className="flex w-full h-full bg-gray-300">
-          <div className="flex flex-col flex-1 mx-6 gap-2">
+          <div className="flex flex-col flex-1 mx-6 gap-2" onClick={() => setSelectedRowId(null)}>
             <h1 className="text-2xl px-6 mt-2 pt-4 border-b border-gray-400">VPC</h1>
             <div className="flex items-center gap-3 p-3 mt-4 w-full bg-white border border-gray-400">
               <p>スタック名</p>
@@ -168,7 +209,14 @@ export default function Home() {
                 displayedList.map((item, index) => (
                   <div
                     key={item.id}
-                    className={`flex justify-between p-3 border border-gray-300 last:border-b-0 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
+                    ref={selectedRowId === item.id ? selectedRowRef : null}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRowId(item.id);
+                    }}
+                    className={`flex justify-between p-3 border border-gray-300 last:border-b-0 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'} ${selectedRowId === item.id ? 'ring-2 ring-blue-400' : ''}`}
                   >
                     <p className="flex-1 truncate">{item.stackName}</p>
                     <p className="flex-1 truncate">{item.status}</p>
@@ -177,10 +225,75 @@ export default function Home() {
                     <p className="flex-1 truncate">
                       {item.updatedAt ? formatDateTime(item.updatedAt) : ''}
                     </p>
-                    <p className="flex-1 truncate"></p>
+                    <p className="flex-1 truncate">
+                      {item.deletedAt ? formatDateTime(item.deletedAt) : ''}
+                    </p>
                   </div>
                 ))}
             </div>
+
+            {actionMenuRect && selectedItem && (
+              <div
+                className="fixed z-40 bg-white border border-gray-300 rounded-lg shadow-lg py-2 min-w-[120px]"
+                style={{
+                  left: actionMenuRect.left,
+                  top: actionMenuRect.top - 52,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
+                  onClick={() => {
+                    setEditingItem(selectedItem);
+                    setIsEditModalOpen(true);
+                    setSelectedRowId(null);
+                  }}
+                >
+                  編集
+                </button>
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+                  onClick={() => {
+                    setDeleteTargetItem(selectedItem);
+                    setIsDeleteConfirmOpen(true);
+                    setSelectedRowId(null);
+                  }}
+                >
+                  削除
+                </button>
+              </div>
+            )}
+
+            <VpcEditModal
+              isOpen={isEditModalOpen}
+              item={editingItem}
+              onClose={() => {
+                setIsEditModalOpen(false);
+                setEditingItem(null);
+              }}
+              onSuccess={() => {
+                setIsEditModalOpen(false);
+                setEditingItem(null);
+                loadList();
+              }}
+            />
+
+            <VpcDeleteModal
+              isOpen={isDeleteConfirmOpen}
+              item={deleteTargetItem}
+              onClose={() => {
+                setIsDeleteConfirmOpen(false);
+                setDeleteTargetItem(null);
+              }}
+              onConfirm={async () => {
+                if (deleteTargetItem) {
+                  await deleteVpc(deleteTargetItem.id);
+                  loadList();
+                }
+              }}
+            />
           </div>
         </main>
       </div>

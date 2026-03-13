@@ -8,12 +8,59 @@ export interface VpcItem {
   description: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
 }
 
 export interface VpcCreateInput {
   stackName: string;
   status: string;
   description: string;
+}
+
+export interface VpcUpdateInput {
+  stackName?: string;
+  status?: string;
+  description?: string;
+}
+
+function getVpcPatchUrl(id: string): string {
+  if (typeof window !== 'undefined') {
+    return `/api/vpc/${id}`;
+  }
+  return `${getVpcEndpoint()}/${id}`;
+}
+
+export async function updateVpc(id: string, input: VpcUpdateInput): Promise<VpcItem> {
+  const url = getVpcPatchUrl(id);
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...input,
+      updatedAt: getJSTDateString(),
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`更新に失敗しました: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+export async function deleteVpc(id: string): Promise<VpcItem> {
+  const url = getVpcPatchUrl(id);
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      deletedAt: getJSTDateString(),
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`削除に失敗しました: ${res.status} ${text}`);
+  }
+  return res.json();
 }
 
 function getVpcEndpoint(): string {
