@@ -1,13 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createVpc } from '../../lib/mockapi';
-
-const STATUS_OPTIONS = [
-  { value: '', label: '選択してください' },
-  { value: 'CREATE_COMPLETE', label: 'CREATE_COMPLETE' },
-  { value: 'CREATE_FAILED', label: 'CREATE_FAILED' },
-];
+import { createVpc, VPC_STATUS_OPTIONS } from '../../lib/mockapi';
 
 interface VpcCreateModalProps {
   isOpen: boolean;
@@ -83,7 +77,7 @@ export function VpcCreateModal({ isOpen, onClose, onSuccess }: VpcCreateModalPro
               onChange={(e) => setStatus(e.target.value)}
               className="w-full border border-gray-400 rounded-md p-2"
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {VPC_STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value || 'empty'} value={opt.value}>
                   {opt.label}
                 </option>

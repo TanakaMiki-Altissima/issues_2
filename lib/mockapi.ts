@@ -23,6 +23,12 @@ export interface VpcUpdateInput {
   description?: string;
 }
 
+export const VPC_STATUS_OPTIONS = [
+  { value: '', label: '選択してください' },
+  { value: 'CREATE_COMPLETE', label: 'CREATE_COMPLETE' },
+  { value: 'CREATE_FAILED', label: 'CREATE_FAILED' },
+];
+
 function getVpcPatchUrl(id: string): string {
   if (typeof window !== 'undefined') {
     return `/api/vpc/${id}`;

@@ -5,11 +5,11 @@ import { Header } from '../components/Header';
 import { HeaderTab } from '../components/HeaderTab';
 import { Sidebar } from '../components/Sidebar';
 import { VpcCreateModal } from '../components/VpcCreateModal';
-import { VpcEditModal } from '../components/VpcEditModal';
 import { VpcDeleteModal } from '../components/VpcDeleteModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRotateRight } from '@fortawesome/free-solid-svg-icons';
-import { VpcItem, fetchVpcList, deleteVpc } from '../../lib/mockapi';
+import { VpcItem, fetchVpcList, deleteVpc, VPC_STATUS_OPTIONS } from '../../lib/mockapi';
+import { VpcActionMenu } from '../components/VpcActionMenu';
 
 function formatDateTime(isoString: string): string {
   if (!isoString) return '';
@@ -42,12 +42,6 @@ export default function Home() {
     left: number;
     width: number;
   } | null>(null);
-
-  const FILTER_STATUS_OPTIONS = [
-    { value: '', label: '選択してください' },
-    { value: 'CREATE_COMPLETE', label: 'CREATE_COMPLETE' },
-    { value: 'CREATE_FAILED', label: 'CREATE_FAILED' },
-  ];
 
   const [filterStackName, setFilterStackName] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -117,7 +111,7 @@ export default function Home() {
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Header />
         <HeaderTab />
-        <main className="flex w-full h-full bg-gray-300">
+        <main className="flex min-h-0 w-full bg-gray-300">
           <div className="flex flex-col flex-1 mx-6 gap-2" onClick={() => setSelectedRowId(null)}>
             <h1 className="text-2xl px-6 mt-2 pt-4 border-b border-gray-400">VPC</h1>
             <div className="flex items-center gap-3 p-3 mt-4 w-full bg-white border border-gray-400">
@@ -135,7 +129,7 @@ export default function Home() {
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
-                {FILTER_STATUS_OPTIONS.map((opt) => (
+                {VPC_STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value || 'empty'} value={opt.value}>
                     {opt.label}
                   </option>
@@ -143,7 +137,7 @@ export default function Home() {
               </select>
               <button
                 type="button"
-                className="bg-gray-200 px-2 py-2 rounded-md ml-24"
+                className="bg-gray-200 px-2 py-2 rounded-md ml-24 font-bold"
                 onClick={() => {
                   setFilterStackName('');
                   setFilterStatus('');
@@ -155,7 +149,7 @@ export default function Home() {
               </button>
               <button
                 type="button"
-                className="bg-blue-500 text-white px-2 py-2 rounded-md"
+                className="bg-blue-500 text-white px-2 py-2 rounded-md font-bold"
                 onClick={() => {
                   setAppliedStackName(filterStackName);
                   setAppliedStatus(filterStatus);
@@ -174,7 +168,7 @@ export default function Home() {
               </button>
               <button
                 type="button"
-                className="bg-blue-500 text-white px-3 rounded-md cursor-pointer"
+                className="bg-blue-500 text-white px-3 rounded-md cursor-pointer font-bold"
                 onClick={() => setIsCreateModalOpen(true)}
               >
                 新規作成
@@ -190,12 +184,12 @@ export default function Home() {
             />
             <div className="w-full bg-white rounded-md border border-gray-400 mt-6 overflow-hidden">
               <div className="flex justify-between p-3 border-b border-gray-200">
-                <p className="flex-1">スタック名</p>
-                <p className="flex-1">ステータス</p>
-                <p className="flex-1">説明</p>
-                <p className="flex-1">作成日時</p>
-                <p className="flex-1">更新日時</p>
-                <p className="flex-1">削除日時</p>
+                <p className="flex-1 font-bold">スタック名</p>
+                <p className="flex-1 font-bold">ステータス</p>
+                <p className="flex-1 font-bold">説明</p>
+                <p className="flex-1 font-bold">作成日時</p>
+                <p className="flex-1 font-bold">更新日時</p>
+                <p className="flex-1 font-bold">削除日時</p>
               </div>
 
               {loading && <div className="p-6 text-center text-gray-500">読み込み中...</div>}
@@ -216,7 +210,13 @@ export default function Home() {
                       e.stopPropagation();
                       setSelectedRowId(item.id);
                     }}
-                    className={`flex justify-between p-3 border border-gray-300 last:border-b-0 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'} ${selectedRowId === item.id ? 'ring-2 ring-blue-400' : ''}`}
+                    className={`flex justify-between p-3 border border-gray-300 last:border-b-0 ${
+                      selectedRowId === item.id
+                        ? 'bg-blue-100'
+                        : index % 2 === 0
+                          ? 'bg-gray-100'
+                          : 'bg-white'
+                    }`}
                   >
                     <p className="flex-1 truncate">{item.stackName}</p>
                     <p className="flex-1 truncate">{item.status}</p>
@@ -232,52 +232,17 @@ export default function Home() {
                 ))}
             </div>
 
-            {actionMenuRect && selectedItem && (
-              <div
-                className="fixed z-40 bg-white border border-gray-300 rounded-lg shadow-lg py-2 min-w-[120px]"
-                style={{
-                  left: actionMenuRect.left,
-                  top: actionMenuRect.top - 52,
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
-                  onClick={() => {
-                    setEditingItem(selectedItem);
-                    setIsEditModalOpen(true);
-                    setSelectedRowId(null);
-                  }}
-                >
-                  編集
-                </button>
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
-                  onClick={() => {
-                    setDeleteTargetItem(selectedItem);
-                    setIsDeleteConfirmOpen(true);
-                    setSelectedRowId(null);
-                  }}
-                >
-                  削除
-                </button>
-              </div>
-            )}
-
-            <VpcEditModal
-              isOpen={isEditModalOpen}
-              item={editingItem}
-              onClose={() => {
-                setIsEditModalOpen(false);
-                setEditingItem(null);
-              }}
-              onSuccess={() => {
-                setIsEditModalOpen(false);
-                setEditingItem(null);
-                loadList();
-              }}
+            <VpcActionMenu
+              actionMenuRect={actionMenuRect}
+              selectedItem={selectedItem}
+              setSelectedRowId={setSelectedRowId}
+              setIsEditModalOpen={setIsEditModalOpen}
+              setEditingItem={setEditingItem}
+              setIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
+              setDeleteTargetItem={setDeleteTargetItem}
+              isEditModalOpen={isEditModalOpen}
+              editingItem={editingItem}
+              loadList={loadList}
             />
 
             <VpcDeleteModal
