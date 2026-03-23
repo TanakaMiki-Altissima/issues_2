@@ -5,13 +5,12 @@ import { Sidebar } from './components/Sidebar';
 
 export default function Home() {
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-screen flex-row">
       <Sidebar />
-      <div className="flex flex-col relative z-10">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Header />
         <HeaderTab />
-      </div>
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 pl-[var(--sidebar-width,16rem)] bg-grey dark:bg-black sm:items-start">
+        <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-grey dark:bg-black sm:items-start">
         <Image
           className="dark:invert"
           src="/next.svg"
@@ -67,7 +66,8 @@ export default function Home() {
             Documentation
           </a>
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
