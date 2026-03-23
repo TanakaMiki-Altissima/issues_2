@@ -19,6 +19,7 @@ import {
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 import { faAws, faBuromobelexperte } from '@fortawesome/free-brands-svg-icons';
+import Link from 'next/link';
 
 const SIDEBAR_WIDTH_COLLAPSED = 50;
 const SIDEBAR_WIDTH_EXPANDED = 200;
@@ -124,7 +125,14 @@ export function Sidebar() {
       </button>
       <div className="min-h-0 bg-gray-800">
         {rowBtn(ICONS[0], LABELS[0], 0)}
-        {rowBtn(ICONS[1], LABELS[1], 1)}
+        <Link
+          href="/"
+          className={`flex h-[40px] w-full items-center hover:bg-gray-700 hover:text-sky-300 ${getActiveClass(1)} ${isOpen ? 'justify-start gap-2 pl-2' : 'justify-center'}`}
+          style={{ height: `${BUTTON_HEIGHT}px` }}
+        >
+          <FontAwesomeIcon icon={ICONS[1]} />
+          {isOpen && <span className="truncate text-sm">{LABELS[1]}</span>}
+        </Link>
         {groupBtn(ICONS[2], LABELS[2], 2, awsOpen, () => setAwsOpen((p) => !p))}
         {awsOpen && rowBtn(ICONS[3], LABELS[3], 3, true)}
         {awsOpen && rowBtn(ICONS[4], LABELS[4], 4, true)}
@@ -137,6 +145,17 @@ export function Sidebar() {
       </div>
       <div className={`flex min-h-0 flex-1 flex-col ${bottomBg}`}>
         {[11, 12, 13].map((i) => (
+          i === 11 ? (
+            <Link
+              key={i}
+              href="/VPC"
+              className={`flex h-[40px] w-full shrink-0 items-center text-gray-400 hover:text-sky-300 ${getActiveClass(i)} ${bottomBg} ${bottomBtnHover} ${isOpen ? 'justify-start gap-2 pl-2' : 'justify-center'}`}
+              style={{ height: `${BUTTON_HEIGHT}px` }}
+            >
+              <FontAwesomeIcon icon={ICONS[i]} />
+              {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
+            </Link>
+          ) : (
           <button
             key={i}
             type="button"
@@ -146,6 +165,7 @@ export function Sidebar() {
             <FontAwesomeIcon icon={ICONS[i]} />
             {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
           </button>
+          )
         ))}
         <div className={`min-h-0 flex-1 ${bottomBg}`} />
       </div>
