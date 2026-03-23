@@ -11,7 +11,7 @@ export default function Home() {
         <Header />
         <HeaderTab />
         <main className="flex w-full h-full bg-gray-300">
-        <Calendar />
+          <Calendar />
         </main>
       </div>
     </div>
