@@ -1,7 +1,7 @@
 const BASE_URL = process.env.NEXT_PUBLIC_MOCKAPI_URL || '';
 const VPC_RESOURCE = 'quotes';
-/** mockapi.io で `/users` リソースを作成し、下記フィールドのオブジェクトを登録してください */
-const USER_RESOURCE = 'users';
+
+const USER_RESOURCE = 'User';
 
 export interface User {
   id: string;

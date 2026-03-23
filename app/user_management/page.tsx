@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { UserPagination } from '../components/UserPagination';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronUp,
@@ -16,6 +17,9 @@ import {
   faTrashCan,
   faList,
   faCaretDown,
+  faArrowDown,
+  faCheck,
+  faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import { User, fetchUserList, deleteUser } from '../../lib/mockapi';
 
@@ -33,44 +37,68 @@ const LABELS: string[] = [
 ];
 
 const BUTTON_HEIGHT = 40;
-/** 階層1段あたりの左空白（シェブロンより左） */
+
 const TREE_INDENT_PX = 16;
+
+const USER_PAGE_SIZE = 10;
+
+const USER_ROW_HEIGHT_PX = 48;
+/** スクロール最上部時に見える行数（9件目が半分くらいまで） */
+const USER_VISIBLE_ROWS = 8.5;
 
 export default function UserManagement() {
   const [aOpen, setAOpen] = useState(false);
   const [bOpen, setBOpen] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [usersLoading, setUsersLoading] = useState(true);
-  const [usersError, setUsersError] = useState<string | null>(null);
+  const [user, setUser] = useState<User[]>([]);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userError, setUserError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [userPage, setUserPage] = useState(1);
 
   const selectedCompany = 'Aテスト本社';
-  const employeeCount = users.length;
+  const employeeCount = user.length;
 
-  const loadUsers = useCallback(async () => {
-    setUsersLoading(true);
-    setUsersError(null);
+  const userTotalPages = user.length === 0 ? 0 : Math.ceil(user.length / USER_PAGE_SIZE);
+  const userPageEffective =
+    userTotalPages === 0 ? 1 : Math.min(Math.max(1, userPage), userTotalPages);
+  const userPageSlice = user.slice(
+    (userPageEffective - 1) * USER_PAGE_SIZE,
+    userPageEffective * USER_PAGE_SIZE,
+  );
+  const userListScrollMaxHeight = Math.round(USER_VISIBLE_ROWS * USER_ROW_HEIGHT_PX);
+
+  useEffect(() => {
+    if (userTotalPages === 0) {
+      setUserPage(1);
+      return;
+    }
+    setUserPage((p) => Math.min(Math.max(1, p), userTotalPages));
+  }, [userTotalPages]);
+
+  const loadUser = useCallback(async () => {
+    setUserLoading(true);
+    setUserError(null);
     try {
       const list = await fetchUserList();
-      setUsers(Array.isArray(list) ? list : []);
+      setUser(Array.isArray(list) ? list : []);
     } catch (e) {
-      setUsersError(e instanceof Error ? e.message : 'ユーザーの取得に失敗しました');
-      setUsers([]);
+      setUserError(e instanceof Error ? e.message : 'ユーザーの取得に失敗しました');
+      setUser([]);
     } finally {
-      setUsersLoading(false);
+      setUserLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    loadUser();
+  }, [loadUser]);
 
   const handleDeleteUser = async (id: string) => {
     if (!window.confirm('このユーザーを削除しますか？')) return;
     setDeletingId(id);
     try {
       await deleteUser(id);
-      await loadUsers();
+      await loadUser();
     } catch (e) {
       alert(e instanceof Error ? e.message : '削除に失敗しました');
     } finally {
@@ -233,76 +261,110 @@ export default function UserManagement() {
               {/* グレーボーダー下のユーザー表 */}
               <div className="flex min-h-0 flex-1 flex-col border-t border-gray-300">
                 <div className="grid min-w-0 grid-cols-6 gap-2 px-4 py-3 text-xs font-bold text-gray-700">
-                  <div className="min-w-0 text-center">名前</div>
+                  <div className="flex min-w-0 items-center justify-start gap-2 text-left">
+                    <span className="h-8 w-8 shrink-0" aria-hidden />
+                    <span className="inline-flex items-center gap-1">
+                      名前
+                      <FontAwesomeIcon icon={faArrowDown} className="shrink-0 text-gray-400" />
+                    </span>
+                  </div>
                   <div className="min-w-0 text-center">社員ID</div>
                   <div className="min-w-0 text-center">役職/階級</div>
                   <div className="min-w-0 text-center">部署</div>
-                  <div className="min-w-0 text-center">会社・所属</div>
+                  <div className="min-w-0 text-center">
+                    会社・所属
+                    <FontAwesomeIcon icon={faFilter} className="shrink-0 text-gray-400" />
+                  </div>
                   <div className="min-w-0 text-center">操作</div>
                 </div>
-                <div className="min-h-0 flex-1 overflow-auto bg-gray-100">
-                  {usersLoading && (
-                    <p className="px-4 py-6 text-center text-sm text-gray-500">読み込み中…</p>
-                  )}
-                  {!usersLoading && usersError && (
-                    <p className="px-4 py-6 text-center text-sm text-red-600">{usersError}</p>
-                  )}
-                  {!usersLoading && !usersError && users.length === 0 && (
-                    <p className="px-4 py-6 text-center text-sm text-gray-500">
-                      ユーザーがいません。mockapi.io に{' '}
-                      <code className="rounded bg-gray-100 px-1">users</code>{' '}
-                      リソースを作成し、データを登録してください。
-                    </p>
-                  )}
-                  {!usersLoading &&
-                    !usersError &&
-                    users.map((u) => {
-                      const displayName =
-                        [u.last_name, u.first_name].filter(Boolean).join(' ') || '—';
-                      return (
-                        <div
-                          key={u.id}
-                          className="grid grid-cols-6 gap-2 border-b border-gray-100 px-4 py-3 text-sm text-gray-800"
-                        >
-                          <div className="min-w-0 truncate text-center" title={displayName}>
-                            {displayName}
-                          </div>
-                          <div className="min-w-0 truncate text-center" title={String(u.id)}>
-                            {u.id ?? '—'}
-                          </div>
-                          <div className="min-w-0 truncate text-center" title={u.position}>
-                            {u.position ?? '—'}
-                          </div>
-                          <div className="min-w-0 truncate text-center" title={u.department}>
-                            {u.department ?? '—'}
-                          </div>
-                          <div className="min-w-0 truncate text-center" title={u.affiliation}>
-                            {u.affiliation ?? '—'}
-                          </div>
-                          <div className="flex min-w-0 flex-wrap items-center justify-center gap-2">
-                            <button
-                              type="button"
-                              className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-                              onClick={() => {
-                                /* 編集モーダル等は今後拡張 */
-                              }}
+                <div className="relative min-h-0 flex-1">
+                  <div
+                    className="overflow-y-auto overflow-x-hidden bg-gray-50 [scrollbar-gutter:stable]"
+                    style={{ maxHeight: userListScrollMaxHeight }}
+                  >
+                    {userLoading && (
+                      <p className="px-4 py-6 text-center text-sm text-gray-500">読み込み中…</p>
+                    )}
+                    {!userLoading && userError && (
+                      <p className="px-4 py-6 text-center text-sm text-red-600">{userError}</p>
+                    )}
+                    {!userLoading && !userError && user.length === 0 && (
+                      <p className="px-4 py-6 text-center text-sm text-gray-500">
+                        ユーザーがいません。mockapi.io に{' '}
+                        <code className="rounded bg-gray-50 px-1">user</code>{' '}
+                        リソースを作成し、データを登録してください。
+                      </p>
+                    )}
+                    {!userLoading &&
+                      !userError &&
+                      userPageSlice.map((u) => {
+                        const displayName =
+                          [u.last_name, u.first_name].filter(Boolean).join(' ') || '—';
+                        return (
+                          <div
+                            key={u.id}
+                            className="grid grid-cols-6 gap-2 px-4 py-3 text-sm text-gray-800"
+                          >
+                            <div
+                              className="flex min-w-0 items-center justify-start gap-2 text-left"
+                              title={displayName}
                             >
-                              <FontAwesomeIcon icon={faPen} className="mr-1" />
-                              編集
-                            </button>
-                            <button
-                              type="button"
-                              disabled={deletingId === u.id}
-                              className="rounded border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                              onClick={() => handleDeleteUser(u.id)}
-                            >
-                              <FontAwesomeIcon icon={faTrashCan} className="mr-1" />
-                              {deletingId === u.id ? '削除中…' : '削除'}
-                            </button>
+                              <span
+                                className="h-8 w-8 shrink-0 rounded-full bg-gray-300"
+                                aria-hidden
+                              />
+                              <span className="min-w-0 truncate text-left">{displayName}</span>
+                            </div>
+                            <div className="min-w-0 truncate text-center" title={String(u.id)}>
+                              {u.id ?? '—'}
+                            </div>
+                            <div className="min-w-0 truncate text-center" title={u.position}>
+                              {u.position ?? '—'}
+                            </div>
+                            <div className="min-w-0 truncate text-center" title={u.department}>
+                              {u.department ?? '—'}
+                            </div>
+                            <div className="min-w-0 truncate text-center" title={u.affiliation}>
+                              {u.affiliation ?? '—'}
+                            </div>
+                            <div className="flex min-w-0 flex-wrap items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                className="rounded border border-green-500 bg-green-50 px-2 py-1 text-xs text-green-700"
+                                onClick={() => {
+                                  /* 編集モーダル等は今後拡張 */
+                                }}
+                              >
+                                編集
+                                <FontAwesomeIcon icon={faPen} className="mr-1" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={deletingId === u.id}
+                                className="rounded border border-red-500 bg-red-50 px-2 py-1 text-xs text-red-600"
+                                onClick={() => handleDeleteUser(u.id)}
+                              >
+                                {deletingId === u.id ? '削除中…' : '削除'}
+                                <FontAwesomeIcon icon={faTrashCan} className="mr-1" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                  </div>
+
+                  {!userLoading && !userError && user.length > 0 && userTotalPages >= 1 && (
+                    <div
+                      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center border-t border-white/30 bg-white/1 px-3 py-3 backdrop-blur-md"
+                      style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.06)' }}
+                    >
+                      <UserPagination
+                        totalPages={userTotalPages}
+                        currentPage={userPageEffective}
+                        onPageChange={setUserPage}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
