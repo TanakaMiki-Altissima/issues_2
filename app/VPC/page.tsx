@@ -1,15 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { HeaderTab } from '../components/HeaderTab';
 import { Sidebar } from '../components/Sidebar';
 import { VpcCreateModal } from '../components/VpcCreateModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRotateRight } from '@fortawesome/free-solid-svg-icons';
+import { VpcItem, fetchVpcList } from '../../lib/mockapi';
 
 export default function Home() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [vpcList, setVpcList] = useState<VpcItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadList = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const list = await fetchVpcList();
+      setVpcList(list);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '一覧の取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadList();
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-row">
@@ -54,15 +75,43 @@ export default function Home() {
             <VpcCreateModal
               isOpen={isCreateModalOpen}
               onClose={() => setIsCreateModalOpen(false)}
-              onSuccess={() => setIsCreateModalOpen(false)}
+              onSuccess={() => {
+                setIsCreateModalOpen(false);
+                loadList();
+              }}
             />
-            <div className="flex justify-between p-3 w-full bg-white rounded-md border border-gray-400 mt-6">
-              <p>スタック名</p>
-              <p>ステータス</p>
-              <p>説明</p>
-              <p>作成日時</p>
-              <p>更新日時</p>
-              <p>削除日時</p>
+            <div className="w-full bg-white rounded-md border border-gray-400 mt-6 overflow-hidden">
+              <div className="flex justify-between p-3 border-b border-gray-200 bg-gray-50">
+                <p className="flex-1">スタック名</p>
+                <p className="flex-1">ステータス</p>
+                <p className="flex-1">説明</p>
+                <p className="flex-1">作成日時</p>
+                <p className="flex-1">更新日時</p>
+                <p className="flex-1">削除日時</p>
+              </div>
+
+              {loading && (
+                <div className="p-6 text-center text-gray-500">読み込み中...</div>
+              )}
+              {error && (
+                <div className="p-6 text-center text-red-600">{error}</div>
+              )}
+              {!loading && !error && vpcList.length === 0 && (
+                <div className="p-6 text-center text-gray-500">データがありません</div>
+              )}
+              {!loading && !error && vpcList.length > 0 && vpcList.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between p-3 border-b border-gray-100 last:border-b-0"
+                >
+                  <p className="flex-1 truncate">{item.stackName}</p>
+                  <p className="flex-1 truncate">{item.status}</p>
+                  <p className="flex-1 truncate">{item.description}</p>
+                  <p className="flex-1 truncate">{item.createdAt ?? ''}</p>
+                  <p className="flex-1 truncate">{item.updatedAt ?? ''}</p>
+                  <p className="flex-1 truncate"></p>
+                </div>
+              ))}
             </div>
           </div>
         </main>

@@ -1,6 +1,6 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_MOCKAPI_URL || '';
-const VPC_RESOURCE = 'vpcs';
+const VPC_RESOURCE = 'quotes';
 
 export interface VpcItem {
   id: string;
