@@ -20,6 +20,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { faAws, faBuromobelexperte } from '@fortawesome/free-brands-svg-icons';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const SIDEBAR_WIDTH_COLLAPSED = 50;
 const SIDEBAR_WIDTH_EXPANDED = 200;
@@ -59,9 +60,8 @@ const LABELS: string[] = [
   'ユーザー管理',
 ];
 
-const ACTIVE_INDEX = 1;
-
 export function Sidebar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [awsOpen, setAwsOpen] = useState(false);
   const [ebookOpen, setEbookOpen] = useState(false);
@@ -71,8 +71,9 @@ export function Sidebar() {
   const bottomBg = allGroupsClosed ? 'bg-gray-800' : 'bg-gray-700';
   const bottomBtnHover = allGroupsClosed ? 'hover:bg-gray-700' : 'hover:bg-gray-600';
 
+  const activeIndex = pathname === '/VPC' ? 11 : pathname === '/' ? 1 : -1;
   const getActiveClass = (index: number) =>
-    index === ACTIVE_INDEX ? 'bg-gray-600 text-sky-300' : 'text-gray-400';
+    index === activeIndex ? 'bg-gray-600 text-sky-300' : 'text-gray-400';
 
   const rowBtn = (icon: IconDefinition, label: string, index: number, isChild?: boolean) => (
     <button
