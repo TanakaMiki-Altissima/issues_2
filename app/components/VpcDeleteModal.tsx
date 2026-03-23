@@ -1,0 +1,71 @@
+'use client';
+
+import { useState } from 'react';
+import { VpcItem } from '../../lib/mockapi';
+
+interface VpcDeleteModalProps {
+  isOpen: boolean;
+  item: VpcItem | null;
+  onClose: () => void;
+  onConfirm: () => void | Promise<void>;
+}
+
+export function VpcDeleteModal({ isOpen, item, onClose, onConfirm }: VpcDeleteModalProps) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleConfirm = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onConfirm();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '削除に失敗しました');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setError(null);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={handleCancel}
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-semibold border-b border-gray-200 pb-3 mb-4">削除の確認</h2>
+        <p className="mb-4">本当によろしいですか？</p>
+        {item && <p className="mb-4 text-sm text-gray-600">スタック名: {item.stackName}</p>}
+        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+        <div className="flex gap-3 justify-end">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+          >
+            いいえ
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={submitting}
+            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-50"
+          >
+            {submitting ? '削除中...' : 'はい'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
