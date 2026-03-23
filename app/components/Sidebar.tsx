@@ -114,7 +114,10 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="flex h-screen flex-col transition-[width]" style={{ width: `${width}px` }}>
+    <aside
+      className="flex min-h-screen flex-col transition-[width]"
+      style={{ width: `${width}px` }}
+    >
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}

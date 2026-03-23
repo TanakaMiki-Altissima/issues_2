@@ -60,7 +60,7 @@ export function VpcDeleteModal({ isOpen, item, onClose, onConfirm }: VpcDeleteMo
             type="button"
             onClick={handleConfirm}
             disabled={submitting}
-            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-50"
+            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
           >
             {submitting ? '削除中...' : 'はい'}
           </button>
