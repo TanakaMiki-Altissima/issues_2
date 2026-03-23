@@ -1,5 +1,23 @@
 const BASE_URL = process.env.NEXT_PUBLIC_MOCKAPI_URL || '';
 const VPC_RESOURCE = 'quotes';
+/** mockapi.io で `/users` リソースを作成し、下記フィールドのオブジェクトを登録してください */
+const USER_RESOURCE = 'users';
+
+export interface User {
+  id: string;
+  last_name?: string;
+  first_name?: string;
+  last_name_okurikana?: string;
+  first_name_okurikana?: string;
+  position?: string;
+  department?: string;
+  affiliation?: string;
+  joining_date?: string;
+  sex?: string;
+  password?: string;
+  email?: string;
+  telephone_number?: string;
+}
 
 export interface VpcItem {
   id: string;
@@ -105,6 +123,34 @@ export async function fetchVpcList(): Promise<VpcItem[]> {
     throw new Error(`一覧の取得に失敗しました: ${res.status} ${text}`);
   }
   return res.json();
+}
+
+function getUserEndpoint(): string {
+  if (!BASE_URL) {
+    throw new Error(
+      'NEXT_PUBLIC_MOCKAPI_URL が設定されていません。.env.local に設定してください。',
+    );
+  }
+  return `${BASE_URL.replace(/\/$/, '')}/${USER_RESOURCE}`;
+}
+
+export async function fetchUserList(): Promise<User[]> {
+  const url = getUserEndpoint();
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`ユーザーの取得に失敗しました: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  const url = `${getUserEndpoint()}/${id}`;
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`削除に失敗しました: ${res.status} ${text}`);
+  }
 }
 
 export const getJSTDateString = (): string => {
