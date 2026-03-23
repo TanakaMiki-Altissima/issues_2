@@ -72,12 +72,12 @@ export function Sidebar() {
   const bottomBtnHover = allGroupsClosed ? 'hover:bg-gray-700' : 'hover:bg-gray-600';
 
   const activeIndex = (() => {
-    if (pathname === '/') return 1; 
+    if (pathname === '/') return 1;
     if (pathname === '/VPC') return 11;
     if (pathname === '/user_management') return 13;
     return -1;
   })();
-  
+
   const getActiveClass = (index: number) =>
     index === activeIndex ? 'bg-gray-600 text-sky-300' : 'text-gray-400';
 
@@ -165,18 +165,17 @@ export function Sidebar() {
               <FontAwesomeIcon icon={ICONS[i]} />
               {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
             </Link>
+          ) : i === 13 ? (
+            <Link
+              key={i}
+              href="/user_management"
+              className={`flex h-[40px] w-full shrink-0 items-center text-gray-400 hover:text-sky-300 ${getActiveClass(i)} ${bottomBg} ${bottomBtnHover} ${isOpen ? 'justify-start gap-2 pl-2' : 'justify-center'}`}
+              style={{ height: `${BUTTON_HEIGHT}px` }}
+            >
+              <FontAwesomeIcon icon={ICONS[i]} />
+              {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
+            </Link>
           ) : (
-            i === 13 ? (
-              <Link
-                key={i}
-                href="/user_management"
-                className={`flex h-[40px] w-full shrink-0 items-center text-gray-400 hover:text-sky-300 ${getActiveClass(i)} ${bottomBg} ${bottomBtnHover} ${isOpen ? 'justify-start gap-2 pl-2' : 'justify-center'}`}
-                style={{ height: `${BUTTON_HEIGHT}px` }}
-              >
-                <FontAwesomeIcon icon={ICONS[i]} />
-                {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
-              </Link>
-            ) : (
             <button
               key={i}
               type="button"
@@ -186,7 +185,7 @@ export function Sidebar() {
               <FontAwesomeIcon icon={ICONS[i]} />
               {isOpen && <span className="truncate text-sm">{LABELS[i]}</span>}
             </button>
-          )),
+          ),
         )}
         <div className={`min-h-0 flex-1 ${bottomBg}`} />
       </div>
