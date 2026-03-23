@@ -29,12 +29,36 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const FILTER_STATUS_OPTIONS = [
+    { value: '', label: '選択してください' },
+    { value: 'CREATE_COMPLETE', label: 'CREATE_COMPLETE' },
+    { value: 'CREATE_FAILED', label: 'CREATE_FAILED' },
+  ];
+
+  const [filterStackName, setFilterStackName] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [appliedStackName, setAppliedStackName] = useState('');
+  const [appliedStatus, setAppliedStatus] = useState('');
+
+  const displayedList = vpcList.filter((item) => {
+    const matchStack =
+      !appliedStackName.trim() ||
+      item.stackName.toLowerCase().includes(appliedStackName.trim().toLowerCase());
+    const matchStatus = !appliedStatus || item.status === appliedStatus;
+    return matchStack && matchStatus;
+  });
+
   const loadList = async () => {
     setLoading(true);
     setError(null);
     try {
       const list = await fetchVpcList();
-      setVpcList(list);
+      const sorted = [...list].sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      setVpcList(sorted);
     } catch (e) {
       setError(e instanceof Error ? e.message : '一覧の取得に失敗しました');
     } finally {
@@ -61,26 +85,55 @@ export default function Home() {
                 placeholder="スタック名を入力"
                 type="text"
                 className="w-full border border-gray-400 rounded-md p-2 flex-1"
+                value={filterStackName}
+                onChange={(e) => setFilterStackName(e.target.value)}
               ></input>
               <p>ステータス</p>
-              <select className="pt-2 border border-gray-400 rounded-md p-2 flex-1">
-                <option>選択してください</option>
+              <select
+                className="pt-2 border border-gray-400 rounded-md p-2 flex-1"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                {FILTER_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'empty'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
-              <button type="button" className="bg-gray-200 px-2 py-2 rounded-md ml-24">
+              <button
+                type="button"
+                className="bg-gray-200 px-2 py-2 rounded-md ml-24"
+                onClick={() => {
+                  setFilterStackName('');
+                  setFilterStatus('');
+                  setAppliedStackName('');
+                  setAppliedStatus('');
+                }}
+              >
                 リセット
               </button>
-              <button type="button" className="bg-blue-500 text-white px-2 py-2 rounded-md">
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-2 py-2 rounded-md"
+                onClick={() => {
+                  setAppliedStackName(filterStackName);
+                  setAppliedStatus(filterStatus);
+                }}
+              >
                 フィルター
               </button>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <FontAwesomeIcon
-                icon={faArrowRotateRight}
-                className="text-gray-700 bg-gray-200 border border-gray-400 rounded p-3"
-              />
               <button
                 type="button"
-                className="bg-blue-500 text-white px-3 rounded-md"
+                onClick={() => loadList()}
+                className="text-gray-700 bg-gray-200 border border-gray-400 rounded p-3 cursor-pointer"
+              >
+                <FontAwesomeIcon icon={faArrowRotateRight} />
+              </button>
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-3 rounded-md cursor-pointer"
                 onClick={() => setIsCreateModalOpen(true)}
               >
                 新規作成
@@ -104,28 +157,29 @@ export default function Home() {
                 <p className="flex-1">削除日時</p>
               </div>
 
-              {loading && (
-                <div className="p-6 text-center text-gray-500">読み込み中...</div>
-              )}
-              {error && (
-                <div className="p-6 text-center text-red-600">{error}</div>
-              )}
-              {!loading && !error && vpcList.length === 0 && (
+              {loading && <div className="p-6 text-center text-gray-500">読み込み中...</div>}
+              {error && <div className="p-6 text-center text-red-600">{error}</div>}
+              {!loading && !error && displayedList.length === 0 && (
                 <div className="p-6 text-center text-gray-500">データがありません</div>
               )}
-              {!loading && !error && vpcList.length > 0 && vpcList.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between p-3 border-b border-gray-100 last:border-b-0"
-                >
-                  <p className="flex-1 truncate">{item.stackName}</p>
-                  <p className="flex-1 truncate">{item.status}</p>
-                  <p className="flex-1 truncate">{item.description}</p>
-                  <p className="flex-1 truncate">{formatDateTime(item.createdAt ?? '')}</p>
-                  <p className="flex-1 truncate">{item.updatedAt ? formatDateTime(item.updatedAt) : ''}</p>
-                  <p className="flex-1 truncate"></p>
-                </div>
-              ))}
+              {!loading &&
+                !error &&
+                displayedList.length > 0 &&
+                displayedList.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex justify-between p-3 border border-gray-300 last:border-b-0 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
+                  >
+                    <p className="flex-1 truncate">{item.stackName}</p>
+                    <p className="flex-1 truncate">{item.status}</p>
+                    <p className="flex-1 truncate">{item.description}</p>
+                    <p className="flex-1 truncate">{formatDateTime(item.createdAt ?? '')}</p>
+                    <p className="flex-1 truncate">
+                      {item.updatedAt ? formatDateTime(item.updatedAt) : ''}
+                    </p>
+                    <p className="flex-1 truncate"></p>
+                  </div>
+                ))}
             </div>
           </div>
         </main>

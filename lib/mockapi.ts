@@ -1,4 +1,3 @@
-
 const BASE_URL = process.env.NEXT_PUBLIC_MOCKAPI_URL || '';
 const VPC_RESOURCE = 'quotes';
 
@@ -19,7 +18,9 @@ export interface VpcCreateInput {
 
 function getVpcEndpoint(): string {
   if (!BASE_URL) {
-    throw new Error('NEXT_PUBLIC_MOCKAPI_URL が設定されていません。.env.local に設定してください。');
+    throw new Error(
+      'NEXT_PUBLIC_MOCKAPI_URL が設定されていません。.env.local に設定してください。',
+    );
   }
   return `${BASE_URL.replace(/\/$/, '')}/${VPC_RESOURCE}`;
 }
@@ -54,7 +55,7 @@ export async function fetchVpcList(): Promise<VpcItem[]> {
 }
 
 export const getJSTDateString = (): string => {
-  return new Date().toLocaleString("ja-JP", {
-    timeZone: "Asia/Tokyo",
+  return new Date().toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
   });
 };
