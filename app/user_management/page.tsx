@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { UserPagination } from '../components/UserPagination';
@@ -22,6 +22,12 @@ import {
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import { User, fetchUserList, deleteUser } from '../../lib/mockapi';
+import {
+  NameFilterTabs,
+  type NameFilterTab,
+  getUserNameFilterGroup,
+  doesUserMatchSearch,
+} from './NameFilterTabs';
 
 const LABELS: string[] = [
   'テストHT社',
@@ -54,14 +60,27 @@ export default function UserManagement() {
   const [userError, setUserError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userPage, setUserPage] = useState(1);
+  const [selectedNameFilter, setSelectedNameFilter] = useState<NameFilterTab>('すべて');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   const selectedCompany = 'Aテスト本社';
   const employeeCount = user.length;
 
-  const userTotalPages = user.length === 0 ? 0 : Math.ceil(user.length / USER_PAGE_SIZE);
+  const filteredUsers = useMemo(() => {
+    const tabFiltered =
+      selectedNameFilter === 'すべて'
+        ? user
+        : user.filter((u) => getUserNameFilterGroup(u) === selectedNameFilter);
+
+    if (!userSearchQuery.trim()) return tabFiltered;
+    return tabFiltered.filter((u) => doesUserMatchSearch(u, userSearchQuery));
+  }, [selectedNameFilter, user, userSearchQuery]);
+
+  const userTotalPages =
+    filteredUsers.length === 0 ? 0 : Math.ceil(filteredUsers.length / USER_PAGE_SIZE);
   const userPageEffective =
     userTotalPages === 0 ? 1 : Math.min(Math.max(1, userPage), userTotalPages);
-  const userPageSlice = user.slice(
+  const userPageSlice = filteredUsers.slice(
     (userPageEffective - 1) * USER_PAGE_SIZE,
     userPageEffective * USER_PAGE_SIZE,
   );
@@ -92,6 +111,16 @@ export default function UserManagement() {
   useEffect(() => {
     loadUser();
   }, [loadUser]);
+
+  useEffect(() => {
+    // フィルター変更時は先頭ページへ戻す
+    setUserPage(1);
+  }, [selectedNameFilter]);
+
+  useEffect(() => {
+    // 検索変更時も先頭ページへ戻す
+    setUserPage(1);
+  }, [userSearchQuery]);
 
   const handleDeleteUser = async (id: string) => {
     if (!window.confirm('このユーザーを削除しますか？')) return;
@@ -210,11 +239,13 @@ export default function UserManagement() {
 
               <div className="flex items-center gap-4 px-4">
                 <p className="shrink-0 font-bold text-sm text-gray-400">{selectedCompany}</p>
-                <div className="ml-auto flex w-1/3 min-w-0 items-center gap-3">
+                <div className="ml-auto flex w-1/2 min-w-0 items-center gap-3">
                   <div className="relative min-w-0 flex-1">
                     <input
                       placeholder="連絡先・ユーザーを検索"
                       className="w-full min-w-0 px-2 py-2 rounded border border-gray-300 text-gray-600 outline-none"
+                      value={userSearchQuery ?? ''}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
                     />
                     <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-2">
                       <span className="text-gray-300 select-none">|</span>
@@ -227,28 +258,8 @@ export default function UserManagement() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-sm text-gray-500">
-                {[
-                  'すべて',
-                  'ア',
-                  'カ',
-                  'サ',
-                  'タ',
-                  'ナ',
-                  'ハ',
-                  'マ',
-                  'ヤ',
-                  'ラ',
-                  'ワ',
-                  'A〜Z',
-                  '0〜9',
-                  'その他',
-                  '名前なし',
-                ].map((t) => (
-                  <button key={t} type="button" className="hover:text-gray-700">
-                    {t}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm text-gray-400">
+                <NameFilterTabs selected={selectedNameFilter} onChange={setSelectedNameFilter} />
 
                 <button
                   type="button"
@@ -293,6 +304,11 @@ export default function UserManagement() {
                         ユーザーがいません。mockapi.io に{' '}
                         <code className="rounded bg-gray-50 px-1">user</code>{' '}
                         リソースを作成し、データを登録してください。
+                      </p>
+                    )}
+                    {!userLoading && !userError && user.length > 0 && filteredUsers.length === 0 && (
+                      <p className="px-4 py-6 text-center text-sm text-gray-500">
+                        条件に一致するユーザーがいません。
                       </p>
                     )}
                     {!userLoading &&
@@ -353,7 +369,7 @@ export default function UserManagement() {
                       })}
                   </div>
 
-                  {!userLoading && !userError && user.length > 0 && userTotalPages >= 1 && (
+                  {!userLoading && !userError && filteredUsers.length > 0 && userTotalPages >= 1 && (
                     <div
                       className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center border-t border-white/30 bg-white/1 px-3 py-3 backdrop-blur-md"
                       style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.06)' }}

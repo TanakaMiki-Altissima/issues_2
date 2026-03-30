@@ -23,7 +23,7 @@ export function UserPagination({ totalPages, currentPage, onPageChange }: UserPa
         <>
           <button
             type="button"
-            className="rounded px-2 py-1 font-mono text-gray-600 hover:bg-white/80"
+            className="rounded px-2 py-1 font-mono text-gray-600"
             onClick={() => onPageChange(1)}
             aria-label="最初のページ"
           >
@@ -31,7 +31,7 @@ export function UserPagination({ totalPages, currentPage, onPageChange }: UserPa
           </button>
           <button
             type="button"
-            className="rounded px-2 py-1 font-mono text-gray-600 hover:bg-white/80"
+            className="rounded px-2 py-1 font-mono text-gray-600"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             aria-label="前のページ"
           >
@@ -47,7 +47,7 @@ export function UserPagination({ totalPages, currentPage, onPageChange }: UserPa
           className={
             n === currentPage
               ? 'flex h-8 min-w-8 items-center justify-center rounded-full bg-green-100 px-2 text-sm font-semibold text-green-600'
-              : 'flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-gray-600 hover:bg-white/70'
+              : 'flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-gray-600'
           }
         >
           {n}
@@ -57,7 +57,7 @@ export function UserPagination({ totalPages, currentPage, onPageChange }: UserPa
         <>
           <button
             type="button"
-            className="rounded px-2 py-1 font-mono text-gray-600 hover:bg-white/80"
+            className="rounded px-2 py-1 font-mono text-gray-600"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             aria-label="次のページ"
           >
@@ -65,7 +65,7 @@ export function UserPagination({ totalPages, currentPage, onPageChange }: UserPa
           </button>
           <button
             type="button"
-            className="rounded px-2 py-1 font-mono text-gray-600 hover:bg-white/80"
+            className="rounded px-2 py-1 font-mono text-gray-600"
             onClick={() => onPageChange(totalPages)}
             aria-label="最後のページ"
           >
