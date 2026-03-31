@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { UserPagination } from '../components/UserPagination';
+import { UserDeleteModal } from '../components/UserDeleteModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronUp,
@@ -18,8 +19,6 @@ import {
   faList,
   faCaretDown,
   faArrowDown,
-  faCheck,
-  faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import { User, fetchUserList, deleteUser } from '../../lib/mockapi';
 import {
@@ -55,26 +54,42 @@ const USER_VISIBLE_ROWS = 8.5;
 export default function UserManagement() {
   const [aOpen, setAOpen] = useState(false);
   const [bOpen, setBOpen] = useState(false);
+  const [aShibuOpen, setAShibuOpen] = useState(false);
+  const [aHonbuOpen, setAHonbuOpen] = useState(false);
+  const [bShibuOpen, setBShibuOpen] = useState(false);
+  const [bHonbuOpen, setBHonbuOpen] = useState(false);
   const [user, setUser] = useState<User[]>([]);
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [userPage, setUserPage] = useState(1);
   const [selectedNameFilter, setSelectedNameFilter] = useState<NameFilterTab>('すべて');
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [selectedOrgLabel, setSelectedOrgLabel] = useState<string | null>(null);
 
-  const selectedCompany = 'Aテスト本社';
+  const selectedCompany = selectedOrgLabel ?? 'すべて';
   const employeeCount = user.length;
 
   const filteredUsers = useMemo(() => {
+    const orgFiltered =
+      selectedOrgLabel == null
+        ? user
+        : user.filter((u) => {
+            const dep = (u.department ?? '').trim();
+            const aff = (u.affiliation ?? '').trim();
+            return dep === selectedOrgLabel || aff === selectedOrgLabel;
+          });
+
     const tabFiltered =
       selectedNameFilter === 'すべて'
-        ? user
-        : user.filter((u) => getUserNameFilterGroup(u) === selectedNameFilter);
+        ? orgFiltered
+        : orgFiltered.filter((u) => getUserNameFilterGroup(u) === selectedNameFilter);
 
     if (!userSearchQuery.trim()) return tabFiltered;
     return tabFiltered.filter((u) => doesUserMatchSearch(u, userSearchQuery));
-  }, [selectedNameFilter, user, userSearchQuery]);
+  }, [selectedNameFilter, selectedOrgLabel, user, userSearchQuery]);
 
   const userTotalPages =
     filteredUsers.length === 0 ? 0 : Math.ceil(filteredUsers.length / USER_PAGE_SIZE);
@@ -122,38 +137,104 @@ export default function UserManagement() {
     setUserPage(1);
   }, [userSearchQuery]);
 
-  const handleDeleteUser = async (id: string) => {
-    if (!window.confirm('このユーザーを削除しますか？')) return;
-    setDeletingId(id);
-    try {
-      await deleteUser(id);
-      await loadUser();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : '削除に失敗しました');
-    } finally {
-      setDeletingId(null);
-    }
+  useEffect(() => {
+    // 左ツリー（部署/所属）変更時も先頭ページへ戻す
+    setUserPage(1);
+  }, [selectedOrgLabel]);
+
+  const openDeleteModal = (u: User) => {
+    setDeleteTargetUser(u);
+    setIsDeleteModalOpen(true);
   };
 
-  const staticRow = (label: string) => (
-    <div
-      key={label}
-      className="flex h-[40px] w-full shrink-0 items-center gap-2 px-3 text-sm text-gray-700 border border-gray-300 hover:bg-sky-100"
-      style={{ height: BUTTON_HEIGHT }}
-    >
-      <FontAwesomeIcon icon={faChevronUp} className="shrink-0 text-gray-500" />
-      <span className="min-w-0 truncate">{label}</span>
-    </div>
-  );
+  const staticRow = (label: string) => {
+    const isActive = selectedOrgLabel === label;
+    return (
+      <button
+        key={label}
+        type="button"
+        onClick={() => setSelectedOrgLabel(label)}
+        aria-pressed={isActive}
+        className={[
+          'flex h-[40px] w-full shrink-0 items-center gap-2 px-3 text-left text-sm border border-gray-300 hover:bg-sky-100',
+          isActive ? 'bg-sky-50 text-sky-800 font-bold' : 'text-gray-700',
+        ].join(' ')}
+        style={{ height: BUTTON_HEIGHT }}
+      >
+        <FontAwesomeIcon icon={faChevronUp} className="shrink-0 text-gray-500" />
+        <span className="min-w-0 truncate">{label}</span>
+      </button>
+    );
+  };
 
-  const groupBtn = (label: string, expanded: boolean, onToggle: () => void) => (
+  const groupBtn = (label: string, expanded: boolean, onToggle: () => void) => {
+    const isActive = selectedOrgLabel === label;
+    return (
+      <button
+        key={label}
+        type="button"
+        onClick={() => {
+          setSelectedOrgLabel(label);
+          onToggle();
+        }}
+        aria-pressed={isActive}
+        className={[
+          'flex h-[40px] w-full shrink-0 items-center gap-2 px-3 text-left text-sm border border-gray-300 hover:bg-sky-100',
+          isActive ? 'bg-sky-50 text-sky-800 font-bold' : 'text-gray-700',
+        ].join(' ')}
+        style={{ height: BUTTON_HEIGHT }}
+      >
+        <FontAwesomeIcon
+          icon={expanded ? faChevronDown : faChevronUp}
+          className="shrink-0 text-gray-500"
+        />
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+      </button>
+    );
+  };
+
+  /** 本社展開時の子行：左に段階空白 → 下向きシェブロン（任意）→ ラベル */
+  const nestedRow = (label: string, depth: number, showChevron = true) => {
+    const isActive = selectedOrgLabel === label;
+    return (
+      <button
+        key={label}
+        type="button"
+        onClick={() => setSelectedOrgLabel(label)}
+        aria-pressed={isActive}
+        className={[
+          'flex h-[40px] w-full shrink-0 items-center gap-2 border border-gray-300 px-3 text-left text-sm hover:bg-sky-100',
+          isActive ? 'bg-sky-50 text-sky-800 font-bold' : 'text-gray-700',
+        ].join(' ')}
+        style={{ height: BUTTON_HEIGHT }}
+      >
+        <span className="shrink-0" style={{ width: depth * TREE_INDENT_PX }} aria-hidden />
+        {showChevron && (
+          <FontAwesomeIcon icon={faChevronDown} className="shrink-0 text-gray-500" />
+        )}
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+      </button>
+    );
+  };
+
+  const expandableNestedRowBtn = (
+    label: string,
+    depth: number,
+    expanded: boolean,
+    onToggle: () => void,
+  ) => (
     <button
       key={label}
       type="button"
-      onClick={onToggle}
-      className="flex h-[40px] w-full shrink-0 items-center gap-2 px-3 text-left text-sm text-gray-700 border border-gray-300 hover:bg-sky-100"
+      onClick={() => {
+        setSelectedOrgLabel(label);
+        onToggle();
+      }}
+      aria-pressed={selectedOrgLabel === label}
+      className="flex h-[40px] w-full shrink-0 items-center gap-2 border border-gray-300 px-3 text-left text-sm text-gray-700 hover:bg-sky-100"
       style={{ height: BUTTON_HEIGHT }}
     >
+      <span className="shrink-0" style={{ width: depth * TREE_INDENT_PX }} aria-hidden />
       <FontAwesomeIcon
         icon={expanded ? faChevronDown : faChevronUp}
         className="shrink-0 text-gray-500"
@@ -162,18 +243,49 @@ export default function UserManagement() {
     </button>
   );
 
-  /** 本社展開時の子行：左に段階空白 → 下向きシェブロン（任意）→ ラベル */
-  const nestedRow = (label: string, depth: number, showChevron = true) => (
-    <div
-      key={label}
-      className="flex h-[40px] w-full shrink-0 items-center gap-2 border border-gray-300 px-3 text-sm text-gray-700 hover:bg-sky-100"
-      style={{ height: BUTTON_HEIGHT }}
-    >
-      <span className="shrink-0" style={{ width: depth * TREE_INDENT_PX }} aria-hidden />
-      {showChevron && <FontAwesomeIcon icon={faChevronDown} className="shrink-0 text-gray-500" />}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-    </div>
-  );
+  const toggleAOpen = () =>
+    setAOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setAShibuOpen(true);
+        setAHonbuOpen(true);
+      } else {
+        setAShibuOpen(false);
+        setAHonbuOpen(false);
+      }
+      return next;
+    });
+
+  const toggleBOpen = () =>
+    setBOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setBShibuOpen(true);
+        setBHonbuOpen(true);
+      } else {
+        setBShibuOpen(false);
+        setBHonbuOpen(false);
+      }
+      return next;
+    });
+
+  const toggleAShibuOpen = () =>
+    setAShibuOpen((prev) => {
+      const next = !prev;
+      if (!next) setAHonbuOpen(false);
+      return next;
+    });
+
+  const toggleAHonbuOpen = () => setAHonbuOpen((prev) => !prev);
+
+  const toggleBShibuOpen = () =>
+    setBShibuOpen((prev) => {
+      const next = !prev;
+      if (!next) setBHonbuOpen(false);
+      return next;
+    });
+
+  const toggleBHonbuOpen = () => setBHonbuOpen((prev) => !prev);
 
   return (
     <div className="flex min-h-screen flex-row">
@@ -221,14 +333,20 @@ export default function UserManagement() {
               <div className="flex flex-col">
                 {staticRow(LABELS[0])}
                 {staticRow(LABELS[1])}
-                {groupBtn(LABELS[2], aOpen, () => setAOpen((p) => !p))}
-                {aOpen && nestedRow(LABELS[3], 1)}
-                {aOpen && nestedRow(LABELS[4], 2)}
-                {aOpen && nestedRow(LABELS[5], 3, false)}
-                {groupBtn(LABELS[6], bOpen, () => setBOpen((p) => !p))}
-                {bOpen && nestedRow(LABELS[7], 1)}
-                {bOpen && nestedRow(LABELS[8], 2)}
-                {bOpen && nestedRow(LABELS[9], 3, false)}
+                {groupBtn(LABELS[2], aOpen, toggleAOpen)}
+                {aOpen &&
+                  expandableNestedRowBtn(LABELS[3], 1, aShibuOpen, toggleAShibuOpen)}
+                {aOpen &&
+                  aShibuOpen &&
+                  expandableNestedRowBtn(LABELS[4], 2, aHonbuOpen, toggleAHonbuOpen)}
+                {aOpen && aShibuOpen && aHonbuOpen && nestedRow(LABELS[5], 3, false)}
+                {groupBtn(LABELS[6], bOpen, toggleBOpen)}
+                {bOpen &&
+                  expandableNestedRowBtn(LABELS[7], 1, bShibuOpen, toggleBShibuOpen)}
+                {bOpen &&
+                  bShibuOpen &&
+                  expandableNestedRowBtn(LABELS[8], 2, bHonbuOpen, toggleBHonbuOpen)}
+                {bOpen && bShibuOpen && bHonbuOpen && nestedRow(LABELS[9], 3, false)}
               </div>
             </div>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-r border border-gray-400 bg-white shadow-[0_4px_8px_rgba(0,0,0,0.15)]">
@@ -321,26 +439,23 @@ export default function UserManagement() {
                             key={u.id}
                             className="grid grid-cols-6 gap-2 px-4 py-3 text-sm text-gray-800"
                           >
-                            <div
-                              className="flex min-w-0 items-center justify-start gap-2 text-left"
-                              title={displayName}
-                            >
+                            <div className="flex min-w-0 items-center justify-start gap-2 text-left">
                               <span
                                 className="h-8 w-8 shrink-0 rounded-full bg-gray-300"
                                 aria-hidden
                               />
                               <span className="min-w-0 truncate text-left">{displayName}</span>
                             </div>
-                            <div className="min-w-0 truncate text-center" title={String(u.id)}>
+                            <div className="min-w-0 truncate text-center">
                               {u.id ?? '—'}
                             </div>
-                            <div className="min-w-0 truncate text-center" title={u.position}>
+                            <div className="min-w-0 truncate text-center">
                               {u.position ?? '—'}
                             </div>
-                            <div className="min-w-0 truncate text-center" title={u.department}>
+                            <div className="min-w-0 truncate text-center">
                               {u.department ?? '—'}
                             </div>
-                            <div className="min-w-0 truncate text-center" title={u.affiliation}>
+                            <div className="min-w-0 truncate text-center">
                               {u.affiliation ?? '—'}
                             </div>
                             <div className="flex min-w-0 flex-wrap items-center justify-center gap-2">
@@ -358,7 +473,7 @@ export default function UserManagement() {
                                 type="button"
                                 disabled={deletingId === u.id}
                                 className="rounded border border-red-500 bg-red-50 px-2 py-1 text-xs text-red-600"
-                                onClick={() => handleDeleteUser(u.id)}
+                                onClick={() => openDeleteModal(u)}
                               >
                                 {deletingId === u.id ? '削除中…' : '削除'}
                                 <FontAwesomeIcon icon={faTrashCan} className="mr-1" />
@@ -387,6 +502,25 @@ export default function UserManagement() {
           </div>
         </main>
       </div>
+
+      <UserDeleteModal
+        isOpen={isDeleteModalOpen}
+        user={deleteTargetUser}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTargetUser(null);
+        }}
+        onConfirm={async () => {
+          if (!deleteTargetUser) return;
+          setDeletingId(deleteTargetUser.id);
+          try {
+            await deleteUser(deleteTargetUser.id);
+            await loadUser();
+          } finally {
+            setDeletingId(null);
+          }
+        }}
+      />
     </div>
   );
 }
