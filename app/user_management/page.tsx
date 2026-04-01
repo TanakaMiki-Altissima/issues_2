@@ -5,6 +5,8 @@ import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { UserPagination } from '../components/UserPagination';
 import { UserDeleteModal } from '../components/UserDeleteModal';
+import { UserEditModal } from '../components/UserEditModal';
+import { UserCreateModal } from '../components/UserCreateModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronUp,
@@ -62,6 +64,8 @@ export default function UserManagement() {
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [userPage, setUserPage] = useState(1);
@@ -141,6 +145,11 @@ export default function UserManagement() {
     // 左ツリー（部署/所属）変更時も先頭ページへ戻す
     setUserPage(1);
   }, [selectedOrgLabel]);
+
+  const openEditModal = (u: User) => {
+    setEditingId(u.id);
+    setIsEditModalOpen(true);
+  };
 
   const openDeleteModal = (u: User) => {
     setDeleteTargetUser(u);
@@ -463,8 +472,8 @@ export default function UserManagement() {
                                 type="button"
                                 className="rounded border border-green-500 bg-green-50 px-2 py-1 text-xs text-green-700"
                                 onClick={() => {
-                                  /* 編集モーダル等は今後拡張 */
-                                }}
+                                  () => openEditModal(u)}
+                                }
                               >
                                 編集
                                 <FontAwesomeIcon icon={faPen} className="mr-1" />
