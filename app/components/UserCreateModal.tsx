@@ -32,7 +32,7 @@ function formatDisplayName(u: User): string {
   return [u.last_name, u.first_name].filter(Boolean).join(' ') || '—';
 }
 
-export function UserDeleteModal({ isOpen, user, onClose, onConfirm }: UserDeleteModalProps) {
+export function UserCreateModal({ isOpen, user, onClose, onConfirm }: UserDeleteModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

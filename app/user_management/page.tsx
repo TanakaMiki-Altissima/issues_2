@@ -470,12 +470,11 @@ export default function UserManagement() {
                             <div className="flex min-w-0 flex-wrap items-center justify-center gap-2">
                               <button
                                 type="button"
+                                disabled={editingId === u.id}
                                 className="rounded border border-green-500 bg-green-50 px-2 py-1 text-xs text-green-700"
-                                onClick={() => {
-                                  () => openEditModal(u)}
-                                }
+                                onClick={() => openEditModal(u)}
                               >
-                                編集
+                                {editingId === u.id ? '編集中…' : '編集'}
                                 <FontAwesomeIcon icon={faPen} className="mr-1" />
                               </button>
                               <button
@@ -511,7 +510,16 @@ export default function UserManagement() {
           </div>
         </main>
       </div>
-
+      <UserEditModal
+        isOpen={isEditModalOpen}
+        user={editingId ? user.find((x) => x.id === editingId) ?? null : null}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingId(null);
+        }}
+        onConfirm={async () => {
+        }}
+      />
       <UserDeleteModal
         isOpen={isDeleteModalOpen}
         user={deleteTargetUser}

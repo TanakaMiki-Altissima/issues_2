@@ -153,6 +153,15 @@ export async function deleteUser(id: string): Promise<void> {
   }
 }
 
+export async function updateUser(id: string, input: UserUpdateInput): Promise<User> {
+  const url = `${getUserEndpoint()}/${id}`;
+  const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`更新に失敗しました: ${res.status} ${text}`);
+  }
+  return res.json();
+}
 export const getJSTDateString = (): string => {
   return new Date().toLocaleString('ja-JP', {
     timeZone: 'Asia/Tokyo',

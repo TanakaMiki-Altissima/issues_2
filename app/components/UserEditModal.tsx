@@ -28,11 +28,7 @@ interface UserEditModalProps {
   onConfirm: () => void | Promise<void>;
 }
 
-function formatDisplayName(u: User): string {
-  return [u.last_name, u.first_name].filter(Boolean).join(' ') || '—';
-}
-
-export function UserDeleteModal({ isOpen, user, onClose, onConfirm }: UserEditModalProps) {
+export function UserEditModal({ isOpen, user, onClose, onConfirm }: UserEditModalProps) {
     const [id, setid] = useState('');
     const [last_name, setlast_name] = useState('');
     const [first_name, setfirst_name] = useState('');
@@ -66,28 +62,19 @@ export function UserDeleteModal({ isOpen, user, onClose, onConfirm }: UserEditMo
       }
     }, [user]);
   
-    // const handleSubmit = async () => {
-    //   if (!user) return;
-    //   setError(null);
-    //   if (!user.trim()) {
-    //     setError('スタック名を入力してください。');
-    //     return;
-    //   }
-    //   setSubmitting(true);
-    //   try {
-    //     const input: UserUpdateInput = {
-    //       stackName: stackName.trim(),
-    //       description: description.trim(),
-    //     };
-    //     await updateUser(user.id, input);
-    //     onClose();
-    //     onSuccess?.();
-    //   } catch (e) {
-    //     setError(e instanceof Error ? e.message : '更新に失敗しました。');
-    //   } finally {
-    //     setSubmitting(false);
-    //   }
-    // };
+    const handleSubmit = async () => {
+      if (!user) return;
+      setError(null);
+      setSubmitting(true);
+      try {
+        await onConfirm();
+        onClose();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '更新に失敗しました');
+      } finally {
+        setSubmitting(false);
+      }
+    };
   
     const handleBack = () => {
       setError(null);
@@ -209,8 +196,8 @@ export function UserDeleteModal({ isOpen, user, onClose, onConfirm }: UserEditMo
             <label className="block text-sm font-medium text-gray-700 mb-1">役職/階級</label>
             <input
               type="text"
-              value={affiliation}
-              onChange={(e) => setaffiliation(e.target.value)}
+              value={position}
+              onChange={(e) => setposition(e.target.value)}
               placeholder="役職/階級"
               className="w-full border border-gray-400 rounded-md p-2"
             />
@@ -247,7 +234,7 @@ export function UserDeleteModal({ isOpen, user, onClose, onConfirm }: UserEditMo
           </button>
           <button
             type="button"
-            // onClick={handleSubmit}
+            onClick={handleSubmit}
             disabled={submitting}
             className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
           >
