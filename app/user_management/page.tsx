@@ -22,7 +22,7 @@ import {
   faCaretDown,
   faArrowDown,
 } from '@fortawesome/free-solid-svg-icons';
-import { User, fetchUserList, deleteUser } from '../../lib/mockapi';
+import { User, fetchUserList, deleteUser, createUser, updateUser } from '../../lib/mockapi';
 import {
   NameFilterTabs,
   type NameFilterTab,
@@ -296,6 +296,8 @@ export default function UserManagement() {
 
   const toggleBHonbuOpen = () => setBHonbuOpen((prev) => !prev);
 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen flex-row">
       <Sidebar />
@@ -320,17 +322,19 @@ export default function UserManagement() {
                   ソート
                 </button>
               </div>
-              <div className="flex w-full flex-nowrap items-stretch justify-between gap-1">
+              <div className="flex w-full min-w-0 flex-wrap items-stretch gap-1">
                 <button
                   type="button"
-                  className="inline-flex shrink-0 items-center gap-1 border border-gray-300 rounded-md px-9 py-1 text-left text-sm text-gray-500 whitespace-nowrap"
+                  className="inline-flex min-w-0 flex-1 items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-left text-sm text-gray-500 whitespace-normal"
                 >
-                  日付を指定して過去のユーザー情報を表示
-                  <FontAwesomeIcon icon={faCalendarDays} className="text-sky-400" />
+                  <span className="min-w-0 flex-1 break-words leading-snug">
+                    日付を指定して過去のユーザー情報を表示
+                  </span>
+                  <FontAwesomeIcon icon={faCalendarDays} className="shrink-0 text-sky-400" />
                 </button>
                 <button
                   type="button"
-                  className="shrink-0 border border-gray-300 rounded-md px-8  py-1 text-sm"
+                  className="shrink-0 rounded-md border border-gray-300 px-4 py-1 text-sm"
                 >
                   指定
                 </button>
@@ -390,6 +394,7 @@ export default function UserManagement() {
 
                 <button
                   type="button"
+                  onClick={() => setIsCreateModalOpen(true)}
                   className="ml-auto shrink-0 rounded-md bg-green-600 px-4 py-2 text-sm font-bold text-white"
                 >
                   アカウント作成 ＋
@@ -510,6 +515,16 @@ export default function UserManagement() {
           </div>
         </main>
       </div>
+      <UserCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+        }}
+        onConfirm={async (input) => {
+          await createUser(input);
+          await loadUser();
+        }}
+      />
       <UserEditModal
         isOpen={isEditModalOpen}
         user={editingId ? user.find((x) => x.id === editingId) ?? null : null}
@@ -517,7 +532,10 @@ export default function UserManagement() {
           setIsEditModalOpen(false);
           setEditingId(null);
         }}
-        onConfirm={async () => {
+        onConfirm={async (input) => {
+          if (!editingId) return;
+          await updateUser(editingId, input);
+          await loadUser();
         }}
       />
       <UserDeleteModal

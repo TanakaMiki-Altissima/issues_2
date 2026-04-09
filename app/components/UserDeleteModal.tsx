@@ -48,7 +48,7 @@ export function UserDeleteModal({ isOpen, user, onClose, onConfirm }: UserDelete
         className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold border-b border-gray-200 pb-3 mb-4">削除の確認</h2>
+        <h2 className="text-lg text-green-700 font-semibold border-b border-gray-200 pb-3 mb-4">削除の確認</h2>
         <p className="mb-4">本当によろしいですか？</p>
         {user && (
           <div className="mb-4 text-sm text-gray-600 space-y-1">

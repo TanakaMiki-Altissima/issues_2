@@ -19,6 +19,12 @@ export interface User {
   telephone_number?: string;
 }
 
+/** PATCH /User/:id のボディ（id は URL で指定） */
+export type UserUpdateInput = Partial<Omit<User, 'id'>>;
+
+/** POST /User — mockapi はリソースに応じて id を必須にすることがある */
+export type UserCreateInput = Omit<User, 'id'> & { id: string };
+
 export interface VpcItem {
   id: string;
   stackName: string;
@@ -134,8 +140,22 @@ function getUserEndpoint(): string {
   return `${BASE_URL.replace(/\/$/, '')}/${USER_RESOURCE}`;
 }
 
+function getUserCollectionUrl(): string {
+  if (typeof window !== 'undefined') {
+    return '/api/user';
+  }
+  return getUserEndpoint();
+}
+
+function getUserItemUrl(id: string): string {
+  if (typeof window !== 'undefined') {
+    return `/api/user/${id}`;
+  }
+  return `${getUserEndpoint()}/${id}`;
+}
+
 export async function fetchUserList(): Promise<User[]> {
-  const url = getUserEndpoint();
+  const url = getUserCollectionUrl();
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text();
@@ -145,7 +165,7 @@ export async function fetchUserList(): Promise<User[]> {
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  const url = `${getUserEndpoint()}/${id}`;
+  const url = getUserItemUrl(id);
   const res = await fetch(url, { method: 'DELETE' });
   if (!res.ok) {
     const text = await res.text();
@@ -153,14 +173,36 @@ export async function deleteUser(id: string): Promise<void> {
   }
 }
 
-export async function updateUser(id: string, input: UserUpdateInput): Promise<User> {
-  const url = `${getUserEndpoint()}/${id}`;
-  const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+export async function createUser(input: UserCreateInput): Promise<User> {
+  const url = getUserCollectionUrl();
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`更新に失敗しました: ${res.status} ${text}`);
+    throw new Error(`登録に失敗しました: ${res.status} ${text}`);
   }
   return res.json();
+}
+
+export async function updateUser(id: string, input: UserUpdateInput): Promise<User> {
+  const url = getUserItemUrl(id);
+  // mockapi.io はプロジェクト設定/挙動により PATCH が反映されないことがあるため、
+  // PATCH が失敗した場合は PUT を試す（どちらも同じ input を送る）。
+  const body = JSON.stringify(input);
+  const headers = { 'Content-Type': 'application/json' } as const;
+
+  const patchRes = await fetch(url, { method: 'PATCH', headers, body });
+  if (patchRes.ok) return patchRes.json();
+
+  const putRes = await fetch(url, { method: 'PUT', headers, body });
+  if (!putRes.ok) {
+    const text = await putRes.text();
+    throw new Error(`更新に失敗しました: ${putRes.status} ${text}`);
+  }
+  return putRes.json();
 }
 export const getJSTDateString = (): string => {
   return new Date().toLocaleString('ja-JP', {
