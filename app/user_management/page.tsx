@@ -49,9 +49,8 @@ const TREE_INDENT_PX = 16;
 
 const USER_PAGE_SIZE = 10;
 
-const USER_ROW_HEIGHT_PX = 48;
-/** スクロール最上部時に見える行数（9件目が半分くらいまで） */
-const USER_VISIBLE_ROWS = 8.5;
+/** 下部固定の透過ページネーションと同じ高さ分。末尾までスクロールしたとき最終行が隠れないようにする */
+const USER_LIST_PAGINATION_OVERLAY_PX = 50;
 
 export default function UserManagement() {
   const [aOpen, setAOpen] = useState(false);
@@ -72,6 +71,8 @@ export default function UserManagement() {
   const [selectedNameFilter, setSelectedNameFilter] = useState<NameFilterTab>('すべて');
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedOrgLabel, setSelectedOrgLabel] = useState<string | null>(null);
+  /** TWO_STEP ノードで、次に同じラベルを押したとき絞り込みに進む待ち状態 */
+  const [treePendingFilterLabel, setTreePendingFilterLabel] = useState<string | null>(null);
 
   const selectedCompany = selectedOrgLabel ?? 'すべて';
   const employeeCount = user.length;
@@ -103,7 +104,8 @@ export default function UserManagement() {
     (userPageEffective - 1) * USER_PAGE_SIZE,
     userPageEffective * USER_PAGE_SIZE,
   );
-  const userListScrollMaxHeight = Math.round(USER_VISIBLE_ROWS * USER_ROW_HEIGHT_PX);
+  const showUserPagination =
+    !userLoading && !userError && filteredUsers.length > 0 && userTotalPages >= 1;
 
   useEffect(() => {
     if (userTotalPages === 0) {
@@ -156,13 +158,27 @@ export default function UserManagement() {
     setIsDeleteModalOpen(true);
   };
 
+  /** A/B ツリー配下: 1回目は toggle のみ、続けて同じ行を押したら絞り込み */
+  const handleTwoStepOrgClick = (label: string, toggle?: () => void) => {
+    if (treePendingFilterLabel === label) {
+      setSelectedOrgLabel(label);
+      setTreePendingFilterLabel(null);
+      return;
+    }
+    toggle?.();
+    setTreePendingFilterLabel(label);
+  };
+
   const staticRow = (label: string) => {
     const isActive = selectedOrgLabel === label;
     return (
       <button
         key={label}
         type="button"
-        onClick={() => setSelectedOrgLabel(label)}
+        onClick={() => {
+          setSelectedOrgLabel(label);
+          setTreePendingFilterLabel(null);
+        }}
         aria-pressed={isActive}
         className={[
           'flex h-[40px] w-full shrink-0 items-center gap-2 px-3 text-left text-sm border border-gray-300 hover:bg-sky-100',
@@ -182,10 +198,7 @@ export default function UserManagement() {
       <button
         key={label}
         type="button"
-        onClick={() => {
-          setSelectedOrgLabel(label);
-          onToggle();
-        }}
+        onClick={() => handleTwoStepOrgClick(label, onToggle)}
         aria-pressed={isActive}
         className={[
           'flex h-[40px] w-full shrink-0 items-center gap-2 px-3 text-left text-sm border border-gray-300 hover:bg-sky-100',
@@ -209,7 +222,7 @@ export default function UserManagement() {
       <button
         key={label}
         type="button"
-        onClick={() => setSelectedOrgLabel(label)}
+        onClick={() => handleTwoStepOrgClick(label)}
         aria-pressed={isActive}
         className={[
           'flex h-[40px] w-full shrink-0 items-center gap-2 border border-gray-300 px-3 text-left text-sm hover:bg-sky-100',
@@ -235,10 +248,7 @@ export default function UserManagement() {
     <button
       key={label}
       type="button"
-      onClick={() => {
-        setSelectedOrgLabel(label);
-        onToggle();
-      }}
+      onClick={() => handleTwoStepOrgClick(label, onToggle)}
       aria-pressed={selectedOrgLabel === label}
       className="flex h-[40px] w-full shrink-0 items-center gap-2 border border-gray-300 px-3 text-left text-sm text-gray-700 hover:bg-sky-100"
       style={{ height: BUTTON_HEIGHT }}
@@ -299,12 +309,14 @@ export default function UserManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-row">
+    <div className="flex h-dvh min-h-0 flex-row overflow-hidden">
       <Sidebar />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <Header />
-        <main className="flex flex-col min-h-0 w-full flex-1 bg-gray-300">
-          <div className="mx-6 flex items-center rounded-md border border-gray-400 bg-white p-4 pl-6 shadow-[0_4px_8px_rgba(0,0,0,0.15)] mt-3">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0">
+          <Header />
+        </div>
+        <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-300">
+          <div className="mx-6 mt-3 flex shrink-0 items-center rounded-md border border-gray-400 bg-white p-4 pl-6 shadow-[0_4px_8px_rgba(0,0,0,0.15)]">
             <p className="text-xl font-bold text-gray-600">ユーザー管理</p>
             <p className="text-sm font-bold text-blue-600 pl-6">在籍中のユーザー</p>
             <FontAwesomeIcon icon={faCaretDown} className="text-blue-600" />
@@ -341,7 +353,7 @@ export default function UserManagement() {
               </div>
             </div>
           </div>
-          <div className="flex min-h-0 min-w-0 flex-1 mx-6 mt-3">
+          <div className="mx-6 mb-3 mt-3 flex min-h-0 min-w-0 flex-1">
             <div className="flex w-52 shrink-0 flex-col self-start border border-gray-400 bg-white">
               <div className="flex flex-col">
                 {staticRow(LABELS[0])}
@@ -362,13 +374,13 @@ export default function UserManagement() {
                 {bOpen && bShibuOpen && bHonbuOpen && nestedRow(LABELS[9], 3, false)}
               </div>
             </div>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-r border border-gray-400 bg-white shadow-[0_4px_8px_rgba(0,0,0,0.15)]">
-              <div className="flex items-center gap-2 pt-2 px-4">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-r border border-gray-400 bg-white shadow-[0_4px_8px_rgba(0,0,0,0.12),0_14px_36px_-8px_rgba(0,0,0,0.22)]">
+              <div className="flex shrink-0 items-center gap-2 px-4 pt-2">
                 <p className="font-bold text-gray-800">社員</p>
                 <p className="text-sm font-bold text-green-600">{employeeCount}</p>
               </div>
 
-              <div className="flex items-center gap-4 px-4">
+              <div className="flex shrink-0 items-center gap-4 px-4">
                 <p className="shrink-0 font-bold text-sm text-gray-400">{selectedCompany}</p>
                 <div className="ml-auto flex w-1/2 min-w-0 items-center gap-3">
                   <div className="relative min-w-0 flex-1">
@@ -389,7 +401,7 @@ export default function UserManagement() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm text-gray-400">
+              <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm text-gray-400">
                 <NameFilterTabs selected={selectedNameFilter} onChange={setSelectedNameFilter} />
 
                 <button
@@ -403,7 +415,7 @@ export default function UserManagement() {
 
               {/* グレーボーダー下のユーザー表 */}
               <div className="flex min-h-0 flex-1 flex-col border-t border-gray-300">
-                <div className="grid min-w-0 grid-cols-6 gap-2 px-4 py-3 text-xs font-bold text-gray-700">
+                <div className="grid min-w-0 shrink-0 grid-cols-6 gap-2 px-4 py-3 text-xs font-bold text-gray-700">
                   <div className="flex min-w-0 items-center justify-start gap-2 text-left">
                     <span className="h-8 w-8 shrink-0" aria-hidden />
                     <span className="inline-flex items-center gap-1">
@@ -420,10 +432,12 @@ export default function UserManagement() {
                   </div>
                   <div className="min-w-0 text-center">操作</div>
                 </div>
-                <div className="relative min-h-0 flex-1">
+                <div className="relative flex min-h-0 flex-1 flex-col">
                   <div
-                    className="overflow-y-auto overflow-x-hidden bg-gray-50 [scrollbar-gutter:stable]"
-                    style={{ maxHeight: userListScrollMaxHeight }}
+                    className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 [scrollbar-gutter:stable]"
+                    style={{
+                      paddingBottom: showUserPagination ? USER_LIST_PAGINATION_OVERLAY_PX : undefined,
+                    }}
                   >
                     {userLoading && (
                       <p className="px-4 py-6 text-center text-sm text-gray-500">読み込み中…</p>
@@ -497,7 +511,7 @@ export default function UserManagement() {
                       })}
                   </div>
 
-                  {!userLoading && !userError && filteredUsers.length > 0 && userTotalPages >= 1 && (
+                  {showUserPagination && (
                     <div
                       className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center border-t border-white/30 bg-white/1 px-3 py-3 backdrop-blur-md"
                       style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.06)' }}

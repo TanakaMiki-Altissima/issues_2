@@ -121,7 +121,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className="flex min-h-screen flex-col transition-[width]"
+      className="flex h-full min-h-0 flex-col transition-[width]"
       style={{ width: `${width}px` }}
     >
       <button
